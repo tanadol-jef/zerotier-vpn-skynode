@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM zerotier/zerotier:latest
 
-ARG ZEROTIER_NETWORK_ID
-
+COPY networks.conf /etc/zerotier/networks.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

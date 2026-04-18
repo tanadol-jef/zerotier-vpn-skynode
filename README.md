@@ -21,18 +21,36 @@ The app runs the ZeroTier One daemon as a Docker service on AuterionOS. Using `n
 
 ## Configuration
 
-Copy the example env file and set your ZeroTier Network ID:
+Edit `services/zerotier/networks.conf` and add your ZeroTier Network ID (one per line):
 
-```bash
-cp .env.example .env
 ```
-
-Edit `.env`:
-```
-ZEROTIER_NETWORK_ID=your_16_char_network_id
+60ee7c034ac89856
 ```
 
 Find your Network ID at [my.zerotier.com](https://my.zerotier.com) → Networks.
+
+The network ID is baked into the Docker image at build time — no environment variables are required.
+
+To join multiple networks, add each ID on its own line:
+
+```
+60ee7c034ac89856
+8056c2e21c000001
+```
+
+---
+
+## Build & Deploy
+
+### On Linux / WSL (recommended)
+
+```bash
+# Build for Skynode S (ARM64)
+auterion-cli app build
+auterion-cli app install build/*.auterionos
+```
+
+> **Windows note:** Run these commands inside WSL2. The `auterion-cli` packaging step uses Docker bind mounts with Linux paths and will fail if run from a native Windows shell.
 
 ---
 
@@ -53,7 +71,6 @@ docker run --rm \
   --device /dev/net/tun \
   --network host \
   -v zerotier-test-data:/var/lib/zerotier-one \
-  -e ZEROTIER_NETWORK_ID=<your_network_id> \
   zerotier-test
 ```
 
@@ -67,7 +84,6 @@ docker run --rm \
 
 ```bash
 # Build a simulation artifact (targets amd64)
-export $(cat .env | xargs)
 auterion-cli app build --simulation
 
 # Install on Virtual Skynode
@@ -84,13 +100,11 @@ Or open the Virtual Skynode web UI at `http://10.41.200.2` → Dashboard → Ins
 ### Stage 3 — Skynode S hardware (final)
 
 ```bash
-export $(cat .env | xargs)
 auterion-cli app build
-
 auterion-cli app install build/*.auterionos
 ```
 
-**Post-deploy verification** (SSH into Skynode S):
+**Post-deploy verification** (SSH into Skynode S at `root@10.41.1.1`):
 ```bash
 zerotier-cli status          # → 200 info <node-id> <version> ONLINE
 zerotier-cli listnetworks    # → shows your network with status OK
@@ -116,10 +130,10 @@ The drone will receive a ZeroTier IP and become reachable from any other authori
 ```
 zerotier-vpn/
 ├── auterion-app.yml          # App manifest: services, capabilities, volumes
-├── .env.example              # Environment variable template
 └── services/zerotier/
     ├── Dockerfile            # Built from official zerotier/zerotier (ARM64-compatible)
-    └── entrypoint.sh         # Starts daemon, joins network, auto-rejoins on drop
+    ├── networks.conf         # ZeroTier network IDs to join (one per line)
+    └── entrypoint.sh         # Starts daemon, joins networks, auto-rejoins on drop
 ```
 
 ---

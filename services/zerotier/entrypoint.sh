@@ -15,13 +15,16 @@ ZT_PID=$!
 echo "[zerotier] Daemon started (PID $ZT_PID), waiting for initialization..."
 sleep 5
 
-# Join network if ZEROTIER_NETWORK_ID is set
-if [ -n "$ZEROTIER_NETWORK_ID" ]; then
-    echo "[zerotier] Joining network: $ZEROTIER_NETWORK_ID"
-    zerotier-cli join "$ZEROTIER_NETWORK_ID"
+# Join networks listed in config file
+NETWORKS_CONF=/etc/zerotier/networks.conf
+if [ -f "$NETWORKS_CONF" ]; then
+    while IFS= read -r NETWORK_ID || [ -n "$NETWORK_ID" ]; do
+        [ -z "$NETWORK_ID" ] && continue
+        echo "[zerotier] Joining network: $NETWORK_ID"
+        zerotier-cli join "$NETWORK_ID"
+    done < "$NETWORKS_CONF"
 else
-    echo "[zerotier] WARNING: ZEROTIER_NETWORK_ID is not set."
-    echo "[zerotier] Set it and run: zerotier-cli join <network-id>"
+    echo "[zerotier] WARNING: $NETWORKS_CONF not found. No networks to join."
 fi
 
 # Show node info
@@ -37,13 +40,15 @@ trap "kill $ZT_PID 2>/dev/null; exit 0" TERM INT
 # Periodic status + auto-rejoin if needed
 while kill -0 $ZT_PID 2>/dev/null; do
     sleep 60
-    if [ -n "$ZEROTIER_NETWORK_ID" ]; then
-        # Re-join if the network dropped (no-op if already joined)
-        STATUS=$(zerotier-cli listnetworks 2>/dev/null | grep "$ZEROTIER_NETWORK_ID" | awk '{print $6}' || true)
-        if [ "$STATUS" != "OK" ]; then
-            echo "[zerotier] Network not OK ($STATUS), re-joining..."
-            zerotier-cli join "$ZEROTIER_NETWORK_ID" || true
-        fi
+    if [ -f "$NETWORKS_CONF" ]; then
+        while IFS= read -r NETWORK_ID || [ -n "$NETWORK_ID" ]; do
+            [ -z "$NETWORK_ID" ] && continue
+            STATUS=$(zerotier-cli listnetworks 2>/dev/null | grep "$NETWORK_ID" | awk '{print $6}' || true)
+            if [ "$STATUS" != "OK" ]; then
+                echo "[zerotier] Network $NETWORK_ID not OK ($STATUS), re-joining..."
+                zerotier-cli join "$NETWORK_ID" || true
+            fi
+        done < "$NETWORKS_CONF"
     fi
 done
 
