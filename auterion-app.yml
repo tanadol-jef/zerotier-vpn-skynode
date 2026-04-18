@@ -1,0 +1,27 @@
+app-name: zerotier-vpn
+app-author: com.yourcompany.zerotier-vpn
+app-version: 1.0.0
+
+services:
+  zerotier:
+    build: services/zerotier
+    build-args:
+      ZEROTIER_NETWORK_ID: ${ZEROTIER_NETWORK_ID}
+
+compose-override:
+  services:
+    zerotier:
+      cap_add:
+        - NET_ADMIN
+        - SYS_ADMIN
+      devices:
+        - /dev/net/tun:/dev/net/tun
+      network_mode: host
+      volumes:
+        - zerotier-data:/var/lib/zerotier-one
+      restart: unless-stopped
+      environment:
+        - ZEROTIER_NETWORK_ID=${ZEROTIER_NETWORK_ID}
+
+  volumes:
+    zerotier-data:
