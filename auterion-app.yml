@@ -1,13 +1,16 @@
 auterion-api-version: 7
 auterion-app-base: none
 app-name: zerotier-vpn
-app-author: com.yourcompany.zerotier-vpn
-app-version: 1.0.0
+app-author: com.eosorbit.zerotier-vpn
+app-version: 1.1.0
 target-platform: skynode-s
 
 services:
   zerotier:
     build: services/zerotier
+    build-args:
+      ZEROTIER_VERSION: latest
+    ssh: false
 
 compose-override:
   services:
@@ -21,6 +24,44 @@ compose-override:
       volumes:
         - zerotier-data:/var/lib/zerotier-one
       restart: unless-stopped
+      environment:
+        - PYTHONUNBUFFERED=1
+      logging:
+        driver: json-file
+        options:
+          max-size: 10m
+          max-file: "3"
 
   volumes:
     zerotier-data:
+
+parameters:
+  - name: NETWORK_ID
+    type: string
+    default: "60ee7c034ac89856"
+    description:
+      short: ZeroTier Network ID
+      long: >
+        The 16-character ZeroTier network ID to join.
+        Find it at my.zerotier.com -> Networks.
+        Changing this requires a container restart to take effect.
+    volatile: false
+    readonly: false
+    visibility: visible
+    reset_on_update: false
+
+  - name: REJOIN_INTERVAL_SEC
+    type: int64
+    default: 60
+    description:
+      short: Network rejoin check interval (seconds)
+      long: >
+        How often the watchdog loop checks the ZeroTier network status
+        and re-joins if the connection is not OK. Default is 60 seconds.
+    unit: s
+    min: 10
+    max: 3600
+    volatile: false
+    readonly: false
+    visibility: advanced
+    reset_on_update: true
