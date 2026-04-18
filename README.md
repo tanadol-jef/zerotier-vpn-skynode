@@ -16,6 +16,9 @@ The app runs the ZeroTier One daemon as a Docker service on AuterionOS. Using `n
 - Docker with buildx (for cross-compilation to ARM64)
 - A [ZeroTier account](https://my.zerotier.com) with a network created
 - Skynode S running AOS 3.5.3 or later (for compose-override merge support)
+- `app-base-v2` installed on the Skynode (required by `auterion-app-base: v2`)
+
+> **Note:** This app uses `auterion-api-version: 6`. API version 7 is not supported by the on-device Mender update module on Skynode S (AOS 4.x).
 
 ---
 
@@ -29,9 +32,7 @@ Edit `services/zerotier/networks.conf` and add your ZeroTier Network ID (one per
 
 Find your Network ID at [my.zerotier.com](https://my.zerotier.com) → Networks.
 
-The network ID is baked into the Docker image at build time — no environment variables are required.
-
-To join multiple networks, add each ID on its own line:
+The network ID is baked into the Docker image at build time. To join multiple networks, add each ID on its own line:
 
 ```
 60ee7c034ac89856
@@ -60,8 +61,6 @@ Always test in stages before deploying to hardware.
 
 ### Stage 1 — Local Docker (no Auterion tooling required)
 
-The fastest way to verify the ZeroTier daemon starts and joins your network:
-
 ```bash
 docker build --platform linux/amd64 -t zerotier-test services/zerotier
 
@@ -80,8 +79,6 @@ docker run --rm \
 
 ### Stage 2 — Virtual Skynode (full AuterionOS environment)
 
-[Virtual Skynode](https://docs.auterion.com/app-development/simulation/virtual-skynode) runs AuterionOS in a VM, giving you the closest experience to real hardware without the physical device.
-
 ```bash
 # Build a simulation artifact (targets amd64)
 auterion-cli app build --simulation
@@ -91,11 +88,6 @@ auterion-cli app install build/*-simulation.auterionos
 ```
 
 Or open the Virtual Skynode web UI at `http://10.41.200.2` → Dashboard → Install Software.
-
-**What to check:**
-- App shows as running in the web UI
-- App survives a Virtual Skynode reboot
-- ZeroTier node appears online at [my.zerotier.com](https://my.zerotier.com)
 
 ### Stage 3 — Skynode S hardware (final)
 
@@ -129,7 +121,7 @@ The drone will receive a ZeroTier IP and become reachable from any other authori
 
 ```
 zerotier-vpn/
-├── auterion-app.yml          # App manifest: services, capabilities, volumes
+├── auterion-app.yml          # App manifest: services, parameters, capabilities, volumes
 └── services/zerotier/
     ├── Dockerfile            # Built from official zerotier/zerotier (ARM64-compatible)
     ├── networks.conf         # ZeroTier network IDs to join (one per line)
@@ -149,10 +141,22 @@ zerotier-vpn/
 
 ---
 
+## App parameters
+
+Configurable from Auterion Suite UI without rebuilding:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `NETWORK_ID` | string | `60ee7c034ac89856` | ZeroTier network ID to join |
+| `REJOIN_INTERVAL_SEC` | int64 | `60` | Watchdog re-join check interval (seconds) |
+
+---
+
 ## References
 
 - [Auterion App Development](https://docs.auterion.com/app-development/app-development/application-development-1)
 - [Auterion Compose Override](https://docs.auterion.com/app-development/app-framework/compose-override)
+- [Auterion App Parameters](https://docs.auterion.com/app-development/app-framework/app-settings)
 - [Virtual Skynode](https://docs.auterion.com/app-development/simulation/virtual-skynode)
 - [ZeroTier Docker](https://docs.zerotier.com/docker/)
 - [ZeroTier Official Docker Image](https://hub.docker.com/r/zerotier/zerotier)

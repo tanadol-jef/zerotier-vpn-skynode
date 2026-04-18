@@ -1,9 +1,9 @@
-auterion-api-version: 7
-auterion-app-base: none
+auterion-api-version: 6
+auterion-app-base: v2
 app-name: zerotier-vpn
 app-author: com.eosorbit.zerotier-vpn
 app-version: 1.1.0
-target-platform: skynode-s
+target-platform: [skynode, skynode-s]
 
 services:
   zerotier:
@@ -24,13 +24,6 @@ compose-override:
       volumes:
         - zerotier-data:/var/lib/zerotier-one
       restart: unless-stopped
-      environment:
-        - PYTHONUNBUFFERED=1
-      logging:
-        driver: json-file
-        options:
-          max-size: 10m
-          max-file: "3"
 
   volumes:
     zerotier-data:

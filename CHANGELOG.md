@@ -8,16 +8,19 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - `app-author` updated to `com.eosorbit.zerotier-vpn`
-- `app-version` bumped to `1.1.0`
+- `auterion-api-version` set to `6` (api-version 7 is not supported by Skynode S AOS 4.x on-device update module)
+- `auterion-app-base` set to `v2` (requires `app-base-v2` installed on the device)
+- `target-platform` changed to list form `[skynode, skynode-s]` for broader compatibility
 
 ### Added
 - `parameters` block exposing two configurable fields in Auterion Suite UI:
   - `NETWORK_ID` — ZeroTier network ID (default: `60ee7c034ac89856`, visible)
   - `REJOIN_INTERVAL_SEC` — watchdog re-join interval in seconds (default: `60`, advanced)
-- `build-args.ZEROTIER_VERSION` in service definition to allow pinning the base image version without editing the Dockerfile
+- `build-args.ZEROTIER_VERSION` to allow pinning the base image version without editing the Dockerfile
 - `ssh: false` explicitly declared on the service
-- `environment: PYTHONUNBUFFERED=1` in `compose-override` for consistent log flushing
-- `logging` config in `compose-override` — `json-file` driver capped at 10 MB × 3 files to prevent storage exhaustion on-device
+
+### Fixed
+- Installation failure (`Update module terminated abnormally: exit status 1`) caused by `auterion-api-version: 7` not being supported by the on-device Mender update module
 
 ---
 
